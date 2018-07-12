@@ -147,11 +147,14 @@ void Net<Ttype, Dtype, Ptype, RunType>::init(graph::Graph<Ttype, Dtype, Ptype>& 
 #ifdef ENABLE_OP_TIMER
         if (std::string::npos != (node_ptr->get_op_name()).find("Conv") 
                 || std::string::npos != (node_ptr->get_op_name()).find("Deconv")) {
+
             std::string key = "kernel_size";
+            std::string filter = "filter_num";
             std::string strides = "strides";
             std::string group = "group";
             std::string dilation_rate = "dilation_rate";
             std::string padding = "padding";
+            auto filter_num = node_ptr->template get_attr<int>(filter);
             auto kernel_size = node_ptr->template get_attr<PTuple<int>>(key);
             auto stride_size = node_ptr->template get_attr<PTuple<int>>(strides);
             auto group_val =  node_ptr->template get_attr<int>(group);
@@ -159,9 +162,9 @@ void Net<Ttype, Dtype, Ptype, RunType>::init(graph::Graph<Ttype, Dtype, Ptype>& 
             auto padding_size = node_ptr->template get_attr<PTuple<int>>(padding);
             char buf[100];
             if (std::string::npos != (node_ptr->get_op_name()).find("Conv")) {
-                sprintf(buf, "%s_%d*%d_%d*%d_%d*%d_%d*%d_%d", "Conv", kernel_size[0], kernel_size[1], padding_size[0], padding_size[1], stride_size[0], stride_size[1], dilation[0], dilation[1], group_val);
+                sprintf(buf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,", filter_num, kernel_size[0], kernel_size[1], padding_size[0], padding_size[1], stride_size[0], stride_size[1], dilation[0], dilation[1], group_val);
             } else {
-                sprintf(buf, "%s_%d*%d_%d*%d_%d*%d_%d*%d_%d", "Deconv", kernel_size[0], kernel_size[1], padding_size[0], padding_size[1], stride_size[0], stride_size[1], dilation[0], dilation[1], group_val);
+                sprintf(buf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,", filter_num, kernel_size[0], kernel_size[1], padding_size[0], padding_size[1], stride_size[0], stride_size[1], dilation[0], dilation[1], group_val);
             }
             _op_param.push_back(buf);
         } else if (std::string::npos != (node_ptr->get_op_name()).find("Pooling")){
@@ -172,10 +175,12 @@ void Net<Ttype, Dtype, Ptype, RunType>::init(graph::Graph<Ttype, Dtype, Ptype>& 
             auto stride_size = node_ptr->template get_attr<PTuple<int>>(strides);
             auto padding_size = node_ptr->template get_attr<PTuple<int>>(padding);
             char buf[100];
-            sprintf(buf, "%s_%d*%d_%d*%d_%d*%d", "Pooling", kernel_size[0], kernel_size[1], padding_size[0], padding_size[1], stride_size[0], stride_size[1]);
+            sprintf(buf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,", -1, kernel_size[0], kernel_size[1], padding_size[0], padding_size[1], stride_size[0], stride_size[1], -1, -1, -1);
             _op_param.push_back(buf);
         } else {
-            _op_param.push_back(node_ptr->get_op_name());   
+            char buf[100];
+            sprintf(buf, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,", -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+            _op_param.push_back(buf);
         }
 #endif
 
@@ -339,10 +344,20 @@ void Net<Ttype, Dtype, Ptype, RunType>::prediction() {
                            << " " << in->valid_shape()[3] 
 			   << " valid_size: " << in->valid_size() 
 			   << " realsize: " << in->size()
-                << " offset_size "<<in->get_seq_offset().size();
+               << " offset_size "<<in->get_seq_offset().size();
         }
 #endif
 #ifdef ENABLE_OP_TIMER
+    std::vector<int> in_sv;
+    for(auto in : executer.ins) {
+            auto in_shape = in->valid_shape();
+            in_sv.push_back(in_shape[0]);
+            in_sv.push_back(in_shape[1]);
+            in_sv.push_back(in_shape[2]);
+            in_sv.push_back(in_shape[3]);
+
+    }
+    _op_input_shape.push_back(in_sv);
 	Context<Ttype> ctx(0, 0, 0);
 	saber::SaberTimer<Ttype> my_time;
 	my_time.start(ctx);

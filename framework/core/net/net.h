@@ -88,6 +88,7 @@ public:
     void reset_op_time() {_op_time = std::vector<float>(_exec_funcs.size(), 0.0f);}
     std::vector<float> get_op_time() {return _op_time;}
     std::vector<std::string> get_op_param() {return _op_param;}
+    std::vector<std::vector<int> > get_op_input_shape() {return _op_input_shape;}
     std::vector<OperatorFunc<Ttype, Dtype, Ptype> > get_exec_funcs() {
         return _exec_funcs;
     }
@@ -142,6 +143,7 @@ private:
 #ifdef ENABLE_OP_TIMER
     std::vector<float> _op_time;
     std::vector<std::string> _op_param;
+    std::vector<std::vector<int> > _op_input_shape;
 #endif
 };
 
