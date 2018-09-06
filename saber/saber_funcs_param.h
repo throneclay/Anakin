@@ -18,7 +18,7 @@
 #include "saber/core/shape.h"
 #include "saber/core/tensor.h"
 #include "saber/saber_types.h"
-
+#include "saber/saber_sp_param.h"
 namespace anakin {
 
     namespace saber {
